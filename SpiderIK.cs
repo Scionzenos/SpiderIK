@@ -268,9 +268,19 @@ public class SpiderIK : MonoBehaviour
                 Debug.LogError("Hips " + pair + " was not found, make sure that the naming scheme follows [Hips #] and that you have input the correct amount of pairs of legs for your avatar.");
                 return;
             }
+            if(hips.hierarchyCount > 8)
+            {   // Error case for having too many bones resulting in a null exception when trying to find wrists and the like
+                Debug.LogError("There are too many bones in your VRIK skeleton under Hips "+ pair +", make sure to not have optional VRIK bones like the neck and shoulders.");
+                return;
+            }
+
             // If we are on the "Hips only" or "Only Legs" mode, we can create the rest of the VRIK here before we try to find it all
-            
             if (setupType >= 1) { InstantiateVRIKSkeletonFromHip(hips, pair); }
+            // If there are less than 3 children of the hips, then the spine does not exist and a VRIK skeleton needs to be created
+            if (hips.childCount < 3) {
+                Debug.LogWarning("'Existing VRIK' was selected, but no skeleton was found under Hips" + pair + ", an automatically generated VRIK rig was used instead.");
+                InstantiateVRIKSkeletonFromHip(hips, pair);
+            }
             spine = hips.Find("Spine " + pair);
             if (spine == null)
             {
@@ -353,14 +363,6 @@ public class SpiderIK : MonoBehaviour
             headTarget.transform.parent = vrikTargets.transform;
             headTarget.transform.position = head.position;
 
-            // Set VRIK parameters for spider specific functionality
-            // Isolate these values as they are only available in FIK 1.9+
-            try {
-                VRIK.solver.LOD = 1;
-                VRIK.solver.leftArm.shoulderTwistWeight = 0;
-                VRIK.solver.rightArm.shoulderTwistWeight = 0;
-            }
-            catch { Debug.Log("Final IK Version is outdated, please use versions 1.9+"); }
             //VRIK.solver.LOD = 1;
             VRIK.solver.plantFeet = false;
 
@@ -388,8 +390,8 @@ public class SpiderIK : MonoBehaviour
             //VRIK.solver.rightArm.shoulderTwistWeight = 0;
             VRIK.solver.rightArm.palmToThumbAxis = new Vector3(1, 0, 0);
 
-            VRIK.solver.locomotion.footDistance = (Mathf.Abs(legCL.position.x) + Mathf.Abs(legCR.position.x)) / 2; // average
-            VRIK.solver.locomotion.stepThreshold = (Mathf.Abs(legCL.position.x) + Mathf.Abs(legCR.position.x)) / 3;
+            VRIK.solver.locomotion.footDistance = Vector3.Distance(legCL.position, legCR.position) / 2;
+            VRIK.solver.locomotion.stepThreshold = Vector3.Distance(legCL.position, legCR.position) / 3;
             VRIK.solver.locomotion.maxVelocity = 1;
             VRIK.solver.locomotion.maxLegStretch = 0.9f;
             VRIK.solver.locomotion.rootSpeed = 400;
