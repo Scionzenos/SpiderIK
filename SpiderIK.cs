@@ -268,11 +268,6 @@ public class SpiderIK : MonoBehaviour
                 Debug.LogError("Hips " + pair + " was not found, make sure that the naming scheme follows [Hips #] and that you have input the correct amount of pairs of legs for your avatar.");
                 return;
             }
-            if(hips.hierarchyCount > 8)
-            {   // Error case for having too many bones resulting in a null exception when trying to find wrists and the like
-                Debug.LogError("There are too many bones in your VRIK skeleton under Hips "+ pair +", make sure to not have optional VRIK bones like the neck and shoulders.");
-                return;
-            }
 
             // If we are on the "Hips only" or "Only Legs" mode, we can create the rest of the VRIK here before we try to find it all
             if (setupType >= 1) { InstantiateVRIKSkeletonFromHip(hips, pair); }
@@ -282,6 +277,7 @@ public class SpiderIK : MonoBehaviour
                 InstantiateVRIKSkeletonFromHip(hips, pair);
             }
             spine = hips.Find("Spine " + pair);
+
             if (spine == null)
             {
                 string[] spineTargets = { "spine", "chest", "hip" };
@@ -363,7 +359,6 @@ public class SpiderIK : MonoBehaviour
             headTarget.transform.parent = vrikTargets.transform;
             headTarget.transform.position = head.position;
 
-            //VRIK.solver.LOD = 1;
             VRIK.solver.plantFeet = false;
 
             VRIK.solver.spine.headTarget = headTarget.transform;
