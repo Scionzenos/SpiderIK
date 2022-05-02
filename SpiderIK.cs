@@ -127,7 +127,14 @@ public class SpiderIK : MonoBehaviour
         grounder.transform.parent = ikRoot.transform;
         grounderIK = grounder.AddComponent<RootMotion.FinalIK.GrounderIK>();
         grounderIK.legs = new RootMotion.FinalIK.IK[pairsOfLegs * 2];
-        grounderIK.pelvis = constrainToWhat;
+        if (constrainToWhat == null)
+        {
+            grounderIK.pelvis = constraintArray[0];
+        }
+        else
+        {
+            grounderIK.pelvis = constrainToWhat;
+        }
         grounderIK.characterRoot = avatar.transform;
 
         grounderIK.solver.layers = LayerMask.GetMask("Default", "Environment");
