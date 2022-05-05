@@ -215,6 +215,13 @@ public class SpiderIK : MonoBehaviour
         child.transform.parent = parent.transform;
         child.transform.position = parent.transform.position + offset;
     }
+    private void checkForLegChildren(Transform leg) // Check VRIK legs for children to push a valid error instead of a default one
+    {
+        if (leg.childCount == 0)
+        {
+            Debug.LogError("VRIK leg" + leg.name + "does not have a child, VRIK requires 4 bones per leg");
+        }
+    }
 
     public void CreateSpider(int setupType, int constraintNumType)
     {
@@ -275,7 +282,11 @@ public class SpiderIK : MonoBehaviour
                 Debug.LogError("Hips " + pair + " was not found, make sure that the naming scheme follows [Hips #] and that you have input the correct amount of pairs of legs for your avatar.");
                 return;
             }
-
+            // Check for if user has too many bones under the hips, which could cause naming problems (usually if they have "left" or "right" in another bone name)
+            if (hips.childCount > 2)
+            {
+                Debug.LogWarning("VRIK hips have more than 2 children, be careful with naming so that the script doesn't use the wrong bones for the legs.");
+            }
             // If we are on the "Hips only" or "Only Legs" mode, we can create the rest of the VRIK here before we try to find it all
             if (setupType >= 1) { InstantiateVRIKSkeletonFromHip(hips, pair); }
             // If there are less than 3 children of the hips, then the spine does not exist and a VRIK skeleton needs to be created
@@ -327,8 +338,11 @@ public class SpiderIK : MonoBehaviour
                 string[] legLTargets = { "left"};
                 legAL = FindVrikBone("Left leg", hips, legLTargets, "l");
             }
+            checkForLegChildren(legAL);
             legBL = legAL.GetChild(0);
+            checkForLegChildren(legBL);
             legCL = legBL.GetChild(0);
+            checkForLegChildren(legCL);
             legDL = legCL.GetChild(0);
 
             legAR = hips.Find("Leg AR " + pair);
@@ -337,8 +351,11 @@ public class SpiderIK : MonoBehaviour
                 string[] legRTargets = { "right"};
                 legAR = FindVrikBone("Right leg", hips, legRTargets, "r");
             }
+            checkForLegChildren(legAR);
             legBR = legAR.GetChild(0);
+            checkForLegChildren(legBR);
             legCR = legBR.GetChild(0);
+            checkForLegChildren(legCR);
             legDR = legCR.GetChild(0);
 
             // Define VRIK references
