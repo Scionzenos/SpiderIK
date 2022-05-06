@@ -299,7 +299,7 @@ public class SpiderIK : MonoBehaviour
             if (spine == null)
             {
                 string[] spineTargets = { "spine", "chest", "hip" };
-                spine = FindVrikBone("Spine", hips, spineTargets,null);
+                spine = FindVrikBone("Spine", hips, spineTargets,"spine");
             }
             // Only Legs mode
             if (setupType == 2)
@@ -311,7 +311,7 @@ public class SpiderIK : MonoBehaviour
             if (head == null)
             {
                 string[] headTargets = { "head", "neck" };
-                head = FindVrikBone("Head", spine, headTargets, null);
+                head = FindVrikBone("Head", spine, headTargets, "head");
             }
 
             armL = spine.Find("Left arm " + pair);
