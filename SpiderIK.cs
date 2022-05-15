@@ -30,7 +30,6 @@ public class SpiderIK : MonoBehaviour
     }
     [Tooltip("The array of constraints that the legs will follow. The first pair of legs will attach to the first element, the second pair to the second element, ect.")]
     public LegArray[] legArray;
-    //public Transform[] legArray;
 
     // Organizational Gameobjects
     private UnityEngine.Animations.ConstraintSource constraintSource;
@@ -215,7 +214,7 @@ public class SpiderIK : MonoBehaviour
         child.transform.parent = parent.transform;
         child.transform.position = parent.transform.position + offset;
     }
-    private void checkForLegChildren(Transform leg) // Check VRIK legs for children to push a valid error instead of a default one
+    private void checkLegForChildren(Transform leg) // Check VRIK legs for children to push a valid error instead of a default one
     {
         if (leg.childCount == 0)
         {
@@ -225,7 +224,17 @@ public class SpiderIK : MonoBehaviour
 
     public void CreateSpider(int setupType, int constraintNumType)
     {
-        armature = avatar.transform.Find("Armature");
+        // Look for any gameobject that is a direct child of the main gameobject with the word "armature" in it
+        for (int child = 0; child < avatar.transform.childCount; child++)
+        {
+            if (avatar.transform.GetChild(child).name.ToLower().Contains("armature"))
+            {
+                armature = avatar.transform.GetChild(child);
+            }
+            // If we could not find any bone that contains "armature"
+            if (armature == null && constrainToWhat != null){ armature = constrainToWhat.parent; } // Single point system
+            if (armature == null && constraintArray != null){ armature = constraintArray[0].parent; } // Multi point system
+        }
 
         // Create objects that need to exist before the loops start
         InstantiateObjects(avatar,pairsOfLegs,constrainToWhat,constraintNumType);
@@ -279,7 +288,7 @@ public class SpiderIK : MonoBehaviour
             hips = armature.Find("Hips " + pair);
             if (hips == null)
             {   // Error case for bad naming of hips or too many pairs input
-                Debug.LogError("Hips " + pair + " was not found, make sure that the naming scheme follows [Hips #] and that you have input the correct amount of pairs of legs for your avatar.");
+                Debug.LogError("Hips " + pair + " was not found under Armature [" + armature.name + "], make sure that the naming scheme follows [Hips #] and that you have input the correct amount of pairs of legs for your avatar.");
                 return;
             }
             // Check for if user has too many bones under the hips, which could cause naming problems (usually if they have "left" or "right" in another bone name)
@@ -338,11 +347,11 @@ public class SpiderIK : MonoBehaviour
                 string[] legLTargets = { "left"};
                 legAL = FindVrikBone("Left leg", hips, legLTargets, "l");
             }
-            checkForLegChildren(legAL);
+            checkLegForChildren(legAL);
             legBL = legAL.GetChild(0);
-            checkForLegChildren(legBL);
+            checkLegForChildren(legBL);
             legCL = legBL.GetChild(0);
-            checkForLegChildren(legCL);
+            checkLegForChildren(legCL);
             legDL = legCL.GetChild(0);
 
             legAR = hips.Find("Leg AR " + pair);
@@ -351,11 +360,11 @@ public class SpiderIK : MonoBehaviour
                 string[] legRTargets = { "right"};
                 legAR = FindVrikBone("Right leg", hips, legRTargets, "r");
             }
-            checkForLegChildren(legAR);
+            checkLegForChildren(legAR);
             legBR = legAR.GetChild(0);
-            checkForLegChildren(legBR);
+            checkLegForChildren(legBR);
             legCR = legBR.GetChild(0);
-            checkForLegChildren(legCR);
+            checkLegForChildren(legCR);
             legDR = legCR.GetChild(0);
 
             // Define VRIK references
