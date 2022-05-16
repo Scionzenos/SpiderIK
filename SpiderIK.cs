@@ -281,11 +281,12 @@ public class SpiderIK : MonoBehaviour
                 GameObject hipsObj = new GameObject();
                 hips = hipsObj.transform;
                 hipsObj.name = "Hips " + pair;
-                hips.parent = avatar.transform.Find("Armature");
+                hips.parent = armature;
                 hips.position = Vector3.Lerp(legArray[pair-1].leftLeg.transform.position, legArray[pair-1].rightLeg.transform.position, 0.5f);
             }
             // Find the skeleton needed for VRIK and FABRIK
             hips = armature.Find("Hips " + pair);
+            if(hips = null) { armature.Find("hips " + pair); }
             if (hips == null)
             {   // Error case for bad naming of hips or too many pairs input
                 Debug.LogError("Hips " + pair + " was not found under Armature [" + armature.name + "], make sure that the naming scheme follows [Hips #] and that you have input the correct amount of pairs of legs for your avatar.");
