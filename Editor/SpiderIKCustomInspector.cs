@@ -32,9 +32,10 @@ public class SpiderIKCustomInspector : Editor
         if (setupInt == 2){EditorGUILayout.HelpBox("This only works if the avatar is not a prefab, if you don't understand the implications of unpacking your avatar, make a duplicate before you do this!", MessageType.Warning);}
         // Below Toolbars
         EditorGUILayout.PropertyField(serializedObject.FindProperty("avatar"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("spiderHipsParent"));
         // Upper Toolbar Settings
         if (pointSelectionInt == 0) {
-            EditorGUILayout.PropertyField(serializedObject.FindProperty("constrainToWhat"));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("constraintTarget"));
         }
         else {
             EditorGUILayout.PropertyField(serializedObject.FindProperty("constraintArray"));

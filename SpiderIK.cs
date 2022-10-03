@@ -14,10 +14,12 @@ public class SpiderIK : MonoBehaviour
     public int pairsOfLegs = 4;
     [Tooltip("The height that a leg reaches when taking a step, the step is actually a graph. The value you set is the mid point of a bell curve.")]
     public float stepHeight;
-
+    // Allow the user to manually set the parent of the spider hips
+    [Tooltip("(Optional) Manually set the parent transform of the spider hips. If this is not set, the armature of the model will be used, though it needs the word 'armature' in the name for the script to find it.")]
+    public Transform spiderHipsParent;
     // For use when the "Single Point" section is enabled
     [Tooltip("What the legs will overall follow, for a drider, this would be the humanoid hips, for Doctor Octopus this would be the humanoid chest, ect.")]
-    public Transform constrainToWhat;
+    public Transform constraintTarget;
     // For use when the "Multiple Points" section is enabled
     [Tooltip("The array of constraints that the legs will follow. The first pair of legs will attach to the first element, the second pair to the second element, ect.")]
     public Transform[] constraintArray;
@@ -80,7 +82,7 @@ public class SpiderIK : MonoBehaviour
         }
     }
 
-    private void InstantiateObjects(GameObject avatar, int pairsOfLegs, Transform constrainToWhat,int constraintNumType)
+    private void InstantiateObjects(GameObject avatar, int pairsOfLegs, Transform constraintTarget,int constraintNumType)
     {
         // Remove the old IK if it existed
         if (ikRoot != null){ DestroyImmediate(ikRoot); }
@@ -101,9 +103,9 @@ public class SpiderIK : MonoBehaviour
         {
             constraint = new GameObject("Parent Constraint");
             constraint.transform.parent = ikRoot.transform;
-            constraint.transform.position = constrainToWhat.position;
+            constraint.transform.position = constraintTarget.position;
             parentConstraint = constraint.AddComponent<UnityEngine.Animations.ParentConstraint>();
-            constraintSource = new UnityEngine.Animations.ConstraintSource { weight = 1, sourceTransform = constrainToWhat };
+            constraintSource = new UnityEngine.Animations.ConstraintSource { weight = 1, sourceTransform = constraintTarget };
             parentConstraint.AddSource(constraintSource);
             parentConstraint.constraintActive = true;
             parentConstraint.locked = true;
@@ -126,13 +128,13 @@ public class SpiderIK : MonoBehaviour
         grounder.transform.parent = ikRoot.transform;
         grounderIK = grounder.AddComponent<RootMotion.FinalIK.GrounderIK>();
         grounderIK.legs = new RootMotion.FinalIK.IK[pairsOfLegs * 2];
-        if (constrainToWhat == null)
+        if (constraintTarget == null)
         {
             grounderIK.pelvis = constraintArray[0];
         }
         else
         {
-            grounderIK.pelvis = constrainToWhat;
+            grounderIK.pelvis = constraintTarget;
         }
         grounderIK.characterRoot = avatar.transform;
 
@@ -224,20 +226,24 @@ public class SpiderIK : MonoBehaviour
 
     public void CreateSpider(int setupType, int constraintNumType)
     {
-        // Look for any gameobject that is a direct child of the main gameobject with the word "armature" in it
-        for (int child = 0; child < avatar.transform.childCount; child++)
+        if(spiderHipsParent != null) { armature = spiderHipsParent; } // Check for manual setting of hip parent
+        if (armature == null) // Automatically try to find hip parent
         {
-            if (avatar.transform.GetChild(child).name.ToLower().Contains("armature"))
+            // Look for any gameobject that is a direct child of the main gameobject with the word "armature" in it
+            for (int child = 0; child < avatar.transform.childCount; child++)
             {
-                armature = avatar.transform.GetChild(child);
+                if (avatar.transform.GetChild(child).name.ToLower().Contains("armature"))
+                {
+                    armature = avatar.transform.GetChild(child);
+                }
+                // If we could not find any bone that contains "armature"
+                Debug.LogWarning("No object with a name that contains the word 'Armature' was found, parent of hips was guessed and may be incorrect.");
+                if (armature == null && constraintTarget != null) { armature = constraintTarget.parent; } // Single point system
+                if (armature == null && constraintArray != null) { armature = constraintArray[0].parent; } // Multi point system
             }
-            // If we could not find any bone that contains "armature"
-            if (armature == null && constrainToWhat != null){ armature = constrainToWhat.parent; } // Single point system
-            if (armature == null && constraintArray != null){ armature = constraintArray[0].parent; } // Multi point system
         }
-
         // Create objects that need to exist before the loops start
-        InstantiateObjects(avatar,pairsOfLegs,constrainToWhat,constraintNumType);
+        InstantiateObjects(avatar,pairsOfLegs,constraintTarget,constraintNumType);
         CheckForProjectErrors();
         if (errorCount == 1) { 
             Debug.LogWarning(errorCount + " error was found in pre-initialization, please check the console for more information."); 
@@ -286,7 +292,7 @@ public class SpiderIK : MonoBehaviour
             }
             // Find the skeleton needed for VRIK and FABRIK
             hips = armature.Find("Hips " + pair);
-            if(hips = null) { armature.Find("hips " + pair); }
+            if(hips == null) { armature.Find("hips " + pair); }
             if (hips == null)
             {   // Error case for bad naming of hips or too many pairs input
                 Debug.LogError("Hips " + pair + " was not found under Armature [" + armature.name + "], make sure that the naming scheme follows [Hips #] and that you have input the correct amount of pairs of legs for your avatar.");
