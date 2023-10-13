@@ -12,7 +12,10 @@ Dashes mean that the name doesn't matter, though having multiple children under 
 
 Changelog:
 
-Spider IK v1.0.7  || Current
+Spider IK v1.0.8  || Current
+- Added support for constraint targets that are not pointed upwards with no rolls
+- 
+Spider IK v1.0.7
 - Added warning console message if code guessed where the parent of the hips were
 - Renamed "Constrain To What" to "Constraint Target" because the original name bothered me
 - Added a manual override for finding the parent of the spider hips for single source spiders (IE the hips still need to be under 1 parent)
