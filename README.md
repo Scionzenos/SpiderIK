@@ -14,7 +14,7 @@ Changelog:
 
 Spider IK v1.0.8  || Current
 - Added support for constraint targets that are not pointed upwards with no rolls
-- 
+  
 Spider IK v1.0.7
 - Added warning console message if code guessed where the parent of the hips were
 - Renamed "Constrain To What" to "Constraint Target" because the original name bothered me
