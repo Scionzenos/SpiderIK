@@ -15,7 +15,7 @@ Changelog:
 Spider IK v1.0.8  || Current
 - Added support for constraint targets that are not pointed upwards with no rolls
 - A couple more checks for hip naming schemes (hips #,hip #)
-- Check for legs via postion offset from hips if naming scheme is too weird to find via bone name
+- Check for legs via position offset from hips if naming scheme is too weird to find via bone name
   
 Spider IK v1.0.7
 - Added warning console message if code guessed where the parent of the hips were
