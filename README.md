@@ -12,9 +12,11 @@ Dashes mean that the name doesn't matter, though having multiple children under 
 
 Changelog:
 
-Spider IK v1.0.8  || Current
+Spider IK v1.0.9  || Current
 - Added support for constraint targets that are not pointed upwards with no rolls
 - A couple more checks for hip naming schemes (hips #,hip #)
+  
+Spider IK v1.0.8
 - Check for legs via position offset from hips if naming scheme is too weird to find via bone name
   
 Spider IK v1.0.7
