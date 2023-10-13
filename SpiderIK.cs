@@ -109,6 +109,7 @@ public class SpiderIK : MonoBehaviour
             parentConstraint.AddSource(constraintSource);
             parentConstraint.constraintActive = true;
             parentConstraint.locked = true;
+            parentConstraint.SetRotationOffset(0, Quaternion.Inverse(constraintTarget.rotation).eulerAngles);
 
             // FABRIK Roots
             fabrikRoots = new GameObject("FABRIK Roots");
@@ -117,6 +118,8 @@ public class SpiderIK : MonoBehaviour
             // VRIK Targets
             vrikTargets = new GameObject("VRIK Targets");
             vrikTargets.transform.parent = constraint.transform;
+
+            
         }
 
         // VRIK
@@ -150,7 +153,7 @@ public class SpiderIK : MonoBehaviour
         grounderIK.solver.liftPelvisWeight = 0;
     }
 
-    private Transform FindVrikBone(string childName, Transform parent, string[] targets,string endString)
+    private Transform FindVrikBone(string childName, Transform parent, string[] targets,string endString,bool checkTransformComparedToParent)
     {
         Transform child = null;
         for (int i = 0; i < parent.childCount; i++)
@@ -167,7 +170,7 @@ public class SpiderIK : MonoBehaviour
                 if (parent.GetChild(i).gameObject.name.ToLower().EndsWith(endString)) { child = parent.GetChild(i); break; }
             }
         }
-        if (child == null)
+        if (child == null && !checkTransformComparedToParent)
         {
             Debug.LogError("Could not find valid [" + childName + "] child for [" + parent.gameObject.name + "]. Make sure the naming follows usual conventions.");
         }
@@ -220,13 +223,12 @@ public class SpiderIK : MonoBehaviour
     {
         if (leg.childCount == 0)
         {
-            Debug.LogError("VRIK leg" + leg.name + "does not have a child, VRIK requires 4 bones per leg");
+            Debug.LogError("VRIK leg " + leg.name + "does not have a child, VRIK requires 4 bones per leg");
         }
     }
-
     public void CreateSpider(int setupType, int constraintNumType)
     {
-        if(spiderHipsParent != null) { armature = spiderHipsParent; } // Check for manual setting of hip parent
+        if (spiderHipsParent != null) { armature = spiderHipsParent; } // Check for manual setting of hip parent
         if (armature == null) // Automatically try to find hip parent
         {
             // Look for any gameobject that is a direct child of the main gameobject with the word "armature" in it
@@ -266,6 +268,7 @@ public class SpiderIK : MonoBehaviour
                 parentConstraint.AddSource(constraintSource);
                 parentConstraint.constraintActive = true;
                 parentConstraint.locked = true;
+                parentConstraint.SetRotationOffset(0, Quaternion.Inverse(constraintTarget.rotation).eulerAngles);
 
                 // FABRIK Roots
                 fabrikRoots = new GameObject("FABRIK Roots " + pair);
@@ -293,16 +296,16 @@ public class SpiderIK : MonoBehaviour
             // Find the skeleton needed for VRIK and FABRIK
             hips = armature.Find("Hips " + pair);
             if(hips == null) { armature.Find("hips " + pair); }
+            if (hips == null) { armature.Find("hip " + pair); }
+            if (hips == null) { armature.Find("hip " + pair); }
             if (hips == null)
             {   // Error case for bad naming of hips or too many pairs input
                 Debug.LogError("Hips " + pair + " was not found under Armature [" + armature.name + "], make sure that the naming scheme follows [Hips #] and that you have input the correct amount of pairs of legs for your avatar.");
                 return;
             }
             // Check for if user has too many bones under the hips, which could cause naming problems (usually if they have "left" or "right" in another bone name)
-            if (hips.childCount > 2)
-            {
-                Debug.LogWarning("VRIK hips have more than 2 children, be careful with naming so that the script doesn't use the wrong bones for the legs.");
-            }
+            if (hips.childCount > 2 && !(hips.childCount == 3 && hips.GetChild(2).transform.name.StartsWith("Spine"))) { Debug.LogWarning("VRIK hips have more than 2 children, be careful with naming so that the script doesn't use the wrong bones for the legs."); }
+            
             // If we are on the "Hips only" or "Only Legs" mode, we can create the rest of the VRIK here before we try to find it all
             if (setupType >= 1) { InstantiateVRIKSkeletonFromHip(hips, pair); }
             // If there are less than 3 children of the hips, then the spine does not exist and a VRIK skeleton needs to be created
@@ -315,7 +318,7 @@ public class SpiderIK : MonoBehaviour
             if (spine == null)
             {
                 string[] spineTargets = { "spine", "chest", "hip" };
-                spine = FindVrikBone("Spine", hips, spineTargets,"spine");
+                spine = FindVrikBone("Spine", hips, spineTargets,"spine",false);
             }
             // Only Legs mode
             if (setupType == 2)
@@ -327,14 +330,14 @@ public class SpiderIK : MonoBehaviour
             if (head == null)
             {
                 string[] headTargets = { "head", "neck" };
-                head = FindVrikBone("Head", spine, headTargets, "head");
+                head = FindVrikBone("Head", spine, headTargets, "head",false);
             }
 
             armL = spine.Find("Left arm " + pair);
             if (armL == null)
             {
                 string[] armLTargets = { "left"};
-                armL = FindVrikBone("Left arm", spine, armLTargets, "l");
+                armL = FindVrikBone("Left arm", spine, armLTargets, "l",false);
             }
             elbowL = armL.GetChild(0);
             wristL = elbowL.GetChild(0);
@@ -343,16 +346,24 @@ public class SpiderIK : MonoBehaviour
             if (armR == null)
             {
                 string[] armRTargets = { "right"};
-                armR = FindVrikBone("Right arm", spine, armRTargets, "r");
+                armR = FindVrikBone("Right arm", spine, armRTargets, "r",false);
             }
             elbowR = armR.GetChild(0);
             wristR = elbowR.GetChild(0);
 
+            // Look for the left leg under the hips
             legAL = hips.Find("Leg AL " + pair);
             if (legAL == null)
             {
                 string[] legLTargets = { "left"};
-                legAL = FindVrikBone("Left leg", hips, legLTargets, "l");
+                legAL = FindVrikBone("Left leg", hips, legLTargets, "l",true);
+                if (legAL == null) // user naming scheme is too bad to use
+                {
+                    foreach (Transform child in hips)
+                    {
+                        if (child.localPosition.x < 0 && child.localPosition.x < -0.0001) {legAL = child;}
+                    }
+                }
             }
             checkLegForChildren(legAL);
             legBL = legAL.GetChild(0);
@@ -361,11 +372,19 @@ public class SpiderIK : MonoBehaviour
             checkLegForChildren(legCL);
             legDL = legCL.GetChild(0);
 
+            // Look for the right leg under the hips
             legAR = hips.Find("Leg AR " + pair);
             if (legAR == null)
             {
                 string[] legRTargets = { "right"};
-                legAR = FindVrikBone("Right leg", hips, legRTargets, "r");
+                legAR = FindVrikBone("Right leg", hips, legRTargets, "r",true);
+                if (legAR == null) // user naming scheme is too bad to use
+                {
+                    foreach (Transform child in hips)
+                    {
+                        if (child.localPosition.x > 0 && child.localPosition.x > 0.0001) {legAR = child;}
+                    }
+                }
             }
             checkLegForChildren(legAR);
             legBR = legAR.GetChild(0);
@@ -416,13 +435,11 @@ public class SpiderIK : MonoBehaviour
             VRIK.solver.leftArm.positionWeight = 0;
             VRIK.solver.leftArm.rotationWeight = 0;
             VRIK.solver.leftArm.shoulderRotationWeight = 0;
-            //VRIK.solver.leftArm.shoulderTwistWeight = 0;
             VRIK.solver.leftArm.palmToThumbAxis = new Vector3(1, 0, 0);
 
             VRIK.solver.rightArm.positionWeight = 0;
             VRIK.solver.rightArm.rotationWeight = 0;
             VRIK.solver.rightArm.shoulderRotationWeight = 0;
-            //VRIK.solver.rightArm.shoulderTwistWeight = 0;
             VRIK.solver.rightArm.palmToThumbAxis = new Vector3(1, 0, 0);
 
             VRIK.solver.locomotion.footDistance = Vector3.Distance(legCL.position, legCR.position) / 2;
